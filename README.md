@@ -14,5 +14,5 @@ Most of the code is done using PInvoke to detect the active scheme, detect video
 The worker uses the `appsettings.json` config file (which should be filled by you) to get what are the power schemes that you consider high performance and what frequency limits you would like to switch between.
 
 ## Todo
-- Let the worker get the highest and the lowest refresh rates and switch between them.
+- Let the worker get the highest and the lowest refresh rates and switch between them or let the user set the limits in the config file.
 - Maybe find a way to get the family of a scheme automatically? like: `Power saver` `High performance` `Balanced`.
