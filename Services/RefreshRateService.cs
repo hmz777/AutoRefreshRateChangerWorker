@@ -1,5 +1,6 @@
-﻿using System.Runtime.InteropServices;
-using static AutoRefreshRateChangerWorker.NativeMethods;
+﻿using AutoRefreshRateChangerWorker.Helpers;
+using System.Runtime.InteropServices;
+using static AutoRefreshRateChangerWorker.Helpers.NativeMethods;
 
 namespace AutoRefreshRateChangerWorker.Services
 {

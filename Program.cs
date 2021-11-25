@@ -1,4 +1,5 @@
 using AutoRefreshRateChangerWorker;
+using AutoRefreshRateChangerWorker.Services;
 
 IHost host = Host.CreateDefaultBuilder(args)
     .UseWindowsService(options =>
