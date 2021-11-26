@@ -78,17 +78,15 @@ namespace AutoRefreshRateChangerWorker
                             if (planLevel == PowerPlanLevel.Low)
                             {
                                 refreshRateService.SwitchToLowFrequency();
-
+                                powerManagementService.ActivePlan = planLevel;
                                 _logger.LogWarning("Display mode switched to {frequency}HZ", refreshRateService.GetCurrentDisplayFrequency());
                             }
                             else if (planLevel == PowerPlanLevel.High)
                             {
                                 refreshRateService.SwitchToHighFrequency();
-
+                                powerManagementService.ActivePlan = planLevel;
                                 _logger.LogWarning("Display mode switched to {frequency}HZ", refreshRateService.GetCurrentDisplayFrequency());
                             }
-
-                            powerManagementService.ActivePlan = planLevel;
                         }
                     }
                 }
