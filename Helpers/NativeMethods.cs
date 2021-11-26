@@ -49,11 +49,12 @@ namespace AutoRefreshRateChangerWorker.Helpers
         [DllImport("kernel32.dll")]
         public static extern uint GetLastError();
 
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", CharSet = CharSet.Ansi)]
         public static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref DEVMODE devMode);
 
-        [DllImport("user32.dll")]
-        public static extern long ChangeDisplaySettings(DEVMODE lpDevMode, uint dwFlags);
+        [DllImport("User32.dll")]
+        [return: MarshalAs(UnmanagedType.I4)]
+        public static extern int ChangeDisplaySettings([In, Out] ref DEVMODE lpDevMode, [param: MarshalAs(UnmanagedType.U4)] uint dwflags);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr LocalFree(IntPtr hMem);
@@ -80,15 +81,15 @@ namespace AutoRefreshRateChangerWorker.Helpers
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
             public string dmDeviceName;
 
-            public short dmSpecVersion;
-            public short dmDriverVersion;
-            public short dmSize;
-            public short dmDriverExtra;
-            public int dmFields;
+            public ushort dmSpecVersion;
+            public ushort dmDriverVersion;
+            public ushort dmSize;
+            public ushort dmDriverExtra;
+            public uint dmFields;
             public int dmPositionX;
             public int dmPositionY;
-            public int dmDisplayOrientation;
-            public int dmDisplayFixedOutput;
+            public uint dmDisplayOrientation;
+            public uint dmDisplayFixedOutput;
             public short dmColor;
             public short dmDuplex;
             public short dmYResolution;
@@ -98,20 +99,20 @@ namespace AutoRefreshRateChangerWorker.Helpers
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
             public string dmFormName;
 
-            public short dmLogPixels;
-            public short dmBitsPerPel;
-            public int dmPelsWidth;
-            public int dmPelsHeight;
-            public int dmDisplayFlags;
-            public int dmDisplayFrequency;
-            //public int dmICMMethod;
-            //public int dmICMIntent;
-            //public int dmMediaType;
-            //public int dmDitherType;
-            //public int dmReserved1;
-            //public int dmReserved2;
-            //public int dmPanningWidth;
-            //public int dmPanningHeight;
+            public ushort dmLogPixels;
+            public uint dmBitsPerPel;
+            public uint dmPelsWidth;
+            public uint dmPelsHeight;
+            public uint dmDisplayFlags;
+            public uint dmDisplayFrequency;
+            public uint dmICMMethod;
+            public uint dmICMIntent;
+            public uint dmMediaType;
+            public uint dmDitherType;
+            public uint dmReserved1;
+            public uint dmReserved2;
+            public uint dmPanningWidth;
+            public uint dmPanningHeight;
         };
 
         #endregion
