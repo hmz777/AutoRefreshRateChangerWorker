@@ -11,12 +11,10 @@ namespace AutoRefreshRateChangerWorker.Services
         [AllowNull]
         private IEnumerable<string> HighPerformanceProfiles;
 
-        private readonly ILogger<PowerManagementService> logger;
         private readonly IConfiguration configuration;
 
-        public PowerManagementService(ILogger<PowerManagementService> logger, IConfiguration configuration)
+        public PowerManagementService(IConfiguration configuration)
         {
-            this.logger = logger;
             this.configuration = configuration;
 
             LoadHighProfiles();
@@ -43,20 +41,16 @@ namespace AutoRefreshRateChangerWorker.Services
 
             if (ErrorCode != 0)
             {
-                logger.LogError("GetActiveGuid() failed with code {ErrorCode}", ErrorCode);
-
                 if (GuidPtr != IntPtr.Zero) { NativeMethods.LocalFree(GuidPtr); }
 
-                return default!;
+                throw new Exception($"GetActiveGuid() failed with code {ErrorCode}");
             }
 
             if (GuidPtr == IntPtr.Zero)
             {
-                logger.LogError("GetActiveScheme() returned null pointer for GUID");
-
                 if (GuidPtr != IntPtr.Zero) { NativeMethods.LocalFree(GuidPtr); }
 
-                return default!;
+                throw new Exception("GetActiveScheme() returned null pointer for GUID");
             }
 
             Guid ActiveSchema = (Guid)Marshal.PtrToStructure(GuidPtr, typeof(Guid))!;
@@ -72,8 +66,9 @@ namespace AutoRefreshRateChangerWorker.Services
             var ErrorCode = NativeMethods.PowerReadFriendlyName(IntPtr.Zero, ref guid, IntPtr.Zero, IntPtr.Zero, BufferPointer, ref BufferSize);
             if (ErrorCode != 0)
             {
-                logger.LogError("GetPowerPlanName() failed when getting buffer size with code {ErrorCode}", ErrorCode);
                 if (BufferPointer != IntPtr.Zero) { Marshal.FreeHGlobal(BufferPointer); }
+
+                throw new Exception($"GetPowerPlanName() failed when getting buffer size with code {ErrorCode}");
             }
 
             if (BufferSize <= 0) { return String.Empty; }
@@ -82,8 +77,9 @@ namespace AutoRefreshRateChangerWorker.Services
             ErrorCode = NativeMethods.PowerReadFriendlyName(IntPtr.Zero, ref guid, IntPtr.Zero, IntPtr.Zero, BufferPointer, ref BufferSize);
             if (ErrorCode != 0)
             {
-                logger.LogError("GetPowerPlanName() failed when getting buffer pointer with code {ErrorCode}", ErrorCode);
                 if (BufferPointer != IntPtr.Zero) { Marshal.FreeHGlobal(BufferPointer); }
+
+                throw new Exception($"GetPowerPlanName() failed when getting buffer pointer with code {ErrorCode}");
             }
 
             string Name = Marshal.PtrToStringUni(BufferPointer)!;
