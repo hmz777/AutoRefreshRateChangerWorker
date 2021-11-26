@@ -2,8 +2,8 @@
 {
     public class DisplayMode
     {
-        public int Height { get; set; }
-        public int Width { get; set; }
-        public int Frequency { get; set; }
+        public uint Height { get; set; }
+        public uint Width { get; set; }
+        public uint Frequency { get; set; }
     }
 }
