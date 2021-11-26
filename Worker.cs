@@ -9,18 +9,12 @@ namespace AutoRefreshRateChangerWorker
         private readonly ILogger<Worker> _logger;
         private readonly RefreshRateService refreshRateService;
         private readonly PowerManagementService powerManagementService;
-        private readonly IConfiguration configuration;
-        readonly bool LogToFile;
 
-        public Worker(ILogger<Worker> logger, RefreshRateService refreshRateService, PowerManagementService powerManagementService, IConfiguration configuration)
+        public Worker(ILogger<Worker> logger, RefreshRateService refreshRateService, PowerManagementService powerManagementService)
         {
             _logger = logger;
             this.refreshRateService = refreshRateService;
             this.powerManagementService = powerManagementService;
-            this.configuration = configuration;
-
-
-            LogToFile = configuration.GetValue<bool>("LogToFile");
         }
 
         public override async Task StartAsync(CancellationToken stoppingToken)
@@ -63,11 +57,6 @@ namespace AutoRefreshRateChangerWorker
             catch (Exception ex)
             {
                 _logger.LogError(0, ex, "An error occured while starting the service");
-
-                if (LogToFile)
-                {
-                    File.AppendAllText("Log.log", "An error occured while starting the service");
-                }
             }
         }
 
@@ -106,11 +95,6 @@ namespace AutoRefreshRateChangerWorker
                 catch (Exception ex)
                 {
                     _logger.LogError(0, ex, "Operation failed!");
-
-                    if (LogToFile)
-                    {
-                        File.AppendAllText("Log.log", ex.Message);
-                    }
                 }
 
                 _logger.LogInformation("Refresh rate worker running at: {time}", DateTimeOffset.Now);
