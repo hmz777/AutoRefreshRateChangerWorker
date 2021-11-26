@@ -6,34 +6,78 @@ namespace AutoRefreshRateChangerWorker.Services
 {
     public class RefreshRateService
     {
-        public DisplayMode DisplayMode { get; set; } = new DisplayMode();
+        private readonly IConfiguration configuration;
+        private readonly ILogger<RefreshRateService> logger;
 
-        private DEVMODE vDevMode;
+        private Dictionary<int, DisplayMode> SupportedDisplayModes { get; set; } = new Dictionary<int, DisplayMode>();
+
+        public readonly int HighFrequency;
+        public readonly int LowFrequency;
+
+        private DEVMODE CurrentDevMode;
+
+        public RefreshRateService(IConfiguration configuration, ILogger<RefreshRateService> logger)
+        {
+            this.configuration = configuration;
+            this.logger = logger;
+            HighFrequency = this.configuration.GetSection("PlanConfig").GetValue<int>("HighFrequency");
+            LowFrequency = this.configuration.GetSection("PlanConfig").GetValue<int>("LowFrequency");
+
+            CurrentDevMode = new();
+            CurrentDevMode.dmSize = (short)Marshal.SizeOf(CurrentDevMode);
+        }
 
         public void PopulateDeviceInfo()
         {
-            vDevMode = new();
+            _ = NativeMethods.EnumDisplaySettings(null!, NativeMethods.ENUM_CURRENT_SETTINGS, ref CurrentDevMode);
+
+            var vDevMode = new DEVMODE();
             vDevMode.dmSize = (short)Marshal.SizeOf(vDevMode);
 
-            _ = NativeMethods.EnumDisplaySettings(null!, NativeMethods.ENUM_CURRENT_SETTINGS, ref vDevMode);
+            int i = 0;
+            while (NativeMethods.EnumDisplaySettings(null!, i, ref vDevMode))
+            {
+                SupportedDisplayModes.Add(i, new DisplayMode
+                {
+                    Frequency = vDevMode.dmDisplayFrequency,
+                    Width = vDevMode.dmPelsWidth,
+                    Height = vDevMode.dmPelsHeight
+                });
 
-            DisplayMode.Frequency = vDevMode.dmDisplayFrequency;
-            DisplayMode.Width = vDevMode.dmPelsWidth;
-            DisplayMode.Height = vDevMode.dmPelsHeight;
+                i++;
+            }
+
+            if (SupportedDisplayModes.Count == 0)
+            {
+                throw new Exception("No supported display modes are found or something went wrong");
+            }
         }
 
-        public void SwitchTo144()
+        public void SwitchToHighFrequency()
         {
-            vDevMode.dmDisplayFrequency = 144;
-            NativeMethods.ChangeDisplaySettings(vDevMode, 0);
-            DisplayMode.Frequency = vDevMode.dmDisplayFrequency;
+            CurrentDevMode.dmDisplayFrequency = HighFrequency;
+            var res = NativeMethods.ChangeDisplaySettings(CurrentDevMode, 0);
+
+            if (res != 0)
+            {
+                logger.LogError("Switching to {freq}HZ failed.", HighFrequency);
+            }
         }
 
-        public void SwitchTo60()
+        public void SwitchToLowFrequency()
         {
-            vDevMode.dmDisplayFrequency = 60;
-            NativeMethods.ChangeDisplaySettings(vDevMode, 0);
-            DisplayMode.Frequency = vDevMode.dmDisplayFrequency;
+            CurrentDevMode.dmDisplayFrequency = LowFrequency;
+            var res = NativeMethods.ChangeDisplaySettings(CurrentDevMode, 0);
+
+            if (res != 0)
+            {
+                logger.LogError("Switching to {freq}HZ failed.", LowFrequency);
+            }
+        }
+
+        public int GetCurrentDisplayFrequency()
+        {
+            return CurrentDevMode.dmDisplayFrequency;
         }
     }
 }
