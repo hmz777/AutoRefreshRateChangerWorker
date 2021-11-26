@@ -19,8 +19,6 @@ namespace AutoRefreshRateChangerWorker
 
         public override async Task StartAsync(CancellationToken stoppingToken)
         {
-            await base.StartAsync(stoppingToken);
-
             try
             {
                 //We fetch the current display mode
@@ -57,7 +55,11 @@ namespace AutoRefreshRateChangerWorker
             catch (Exception ex)
             {
                 _logger.LogError(0, ex, "An error occured while starting the service");
+
+                return;//Short circuit the service so it won't start
             }
+
+            await base.StartAsync(stoppingToken);
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
