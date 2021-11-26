@@ -104,14 +104,14 @@ namespace AutoRefreshRateChangerWorker.Helpers
             public int dmPelsHeight;
             public int dmDisplayFlags;
             public int dmDisplayFrequency;
-            public int dmICMMethod;
-            public int dmICMIntent;
-            public int dmMediaType;
-            public int dmDitherType;
-            public int dmReserved1;
-            public int dmReserved2;
-            public int dmPanningWidth;
-            public int dmPanningHeight;
+            //public int dmICMMethod;
+            //public int dmICMIntent;
+            //public int dmMediaType;
+            //public int dmDitherType;
+            //public int dmReserved1;
+            //public int dmReserved2;
+            //public int dmPanningWidth;
+            //public int dmPanningHeight;
         };
 
         #endregion
