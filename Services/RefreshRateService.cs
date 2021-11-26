@@ -7,24 +7,22 @@ namespace AutoRefreshRateChangerWorker.Services
     public class RefreshRateService
     {
         private readonly IConfiguration configuration;
-        private readonly ILogger<RefreshRateService> logger;
 
         private Dictionary<int, DisplayMode> SupportedDisplayModes { get; set; } = new Dictionary<int, DisplayMode>();
 
-        public readonly int HighFrequency;
-        public readonly int LowFrequency;
+        public readonly uint HighFrequency;
+        public readonly uint LowFrequency;
 
         private DEVMODE CurrentDevMode;
 
-        public RefreshRateService(IConfiguration configuration, ILogger<RefreshRateService> logger)
+        public RefreshRateService(IConfiguration configuration)
         {
             this.configuration = configuration;
-            this.logger = logger;
-            HighFrequency = this.configuration.GetSection("PlanConfig").GetValue<int>("HighFrequency");
-            LowFrequency = this.configuration.GetSection("PlanConfig").GetValue<int>("LowFrequency");
+            HighFrequency = this.configuration.GetSection("PlanConfig").GetValue<uint>("HighFrequency");
+            LowFrequency = this.configuration.GetSection("PlanConfig").GetValue<uint>("LowFrequency");
 
             CurrentDevMode = new();
-            CurrentDevMode.dmSize = (short)Marshal.SizeOf(CurrentDevMode);
+            CurrentDevMode.dmSize = (ushort)Marshal.SizeOf(CurrentDevMode);
         }
 
         public void PopulateDeviceInfo()
@@ -32,7 +30,7 @@ namespace AutoRefreshRateChangerWorker.Services
             _ = NativeMethods.EnumDisplaySettings(null!, NativeMethods.ENUM_CURRENT_SETTINGS, ref CurrentDevMode);
 
             var vDevMode = new DEVMODE();
-            vDevMode.dmSize = (short)Marshal.SizeOf(vDevMode);
+            vDevMode.dmSize = (ushort)Marshal.SizeOf(vDevMode);
 
             int i = 0;
             while (NativeMethods.EnumDisplaySettings(null!, i, ref vDevMode))
@@ -56,26 +54,26 @@ namespace AutoRefreshRateChangerWorker.Services
         public void SwitchToHighFrequency()
         {
             CurrentDevMode.dmDisplayFrequency = HighFrequency;
-            var res = NativeMethods.ChangeDisplaySettings(CurrentDevMode, 0);
+            var res = NativeMethods.ChangeDisplaySettings(ref CurrentDevMode, 0);
 
             if (res != 0)
             {
-                logger.LogError("Switching to {freq}HZ failed.", HighFrequency);
+                throw new Exception($"Switching to {HighFrequency}HZ failed with error code {res}.");
             }
         }
 
         public void SwitchToLowFrequency()
         {
             CurrentDevMode.dmDisplayFrequency = LowFrequency;
-            var res = NativeMethods.ChangeDisplaySettings(CurrentDevMode, 0);
+            var res = NativeMethods.ChangeDisplaySettings(ref CurrentDevMode, 0);
 
             if (res != 0)
             {
-                logger.LogError("Switching to {freq}HZ failed.", LowFrequency);
+                throw new Exception($"Switching to {LowFrequency}HZ failed with error code {res}.");
             }
         }
 
-        public int GetCurrentDisplayFrequency()
+        public uint GetCurrentDisplayFrequency()
         {
             return CurrentDevMode.dmDisplayFrequency;
         }
