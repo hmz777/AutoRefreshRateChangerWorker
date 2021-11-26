@@ -1,5 +1,6 @@
 using AutoRefreshRateChangerWorker.Helpers;
 using AutoRefreshRateChangerWorker.Services;
+using System.Runtime.ExceptionServices;
 
 namespace AutoRefreshRateChangerWorker
 {
@@ -8,12 +9,18 @@ namespace AutoRefreshRateChangerWorker
         private readonly ILogger<Worker> _logger;
         private readonly RefreshRateService refreshRateService;
         private readonly PowerManagementService powerManagementService;
+        private readonly IConfiguration configuration;
+        readonly bool LogToFile;
 
-        public Worker(ILogger<Worker> logger, RefreshRateService refreshRateService, PowerManagementService powerManagementService)
+        public Worker(ILogger<Worker> logger, RefreshRateService refreshRateService, PowerManagementService powerManagementService, IConfiguration configuration)
         {
             _logger = logger;
             this.refreshRateService = refreshRateService;
             this.powerManagementService = powerManagementService;
+            this.configuration = configuration;
+
+
+            LogToFile = configuration.GetValue<bool>("LogToFile");
         }
 
         public override async Task StartAsync(CancellationToken stoppingToken)
@@ -24,10 +31,43 @@ namespace AutoRefreshRateChangerWorker
             {
                 //We fetch the current display mode
                 refreshRateService.PopulateDeviceInfo();
+
+                switch (powerManagementService.ActivePlan)
+                {
+                    case PowerPlanLevel.High:
+                        {
+                            if (refreshRateService.GetCurrentDisplayFrequency() == refreshRateService.LowFrequency)
+                            {
+                                refreshRateService.SwitchToHighFrequency();
+
+                                _logger.LogWarning("Display mode switched to {frequency}HZ", refreshRateService.GetCurrentDisplayFrequency());
+                            }
+
+                            break;
+                        }
+                    case PowerPlanLevel.Low:
+                        {
+                            if (refreshRateService.GetCurrentDisplayFrequency() == refreshRateService.HighFrequency)
+                            {
+                                refreshRateService.SwitchToLowFrequency();
+
+                                _logger.LogWarning("Display mode switched to {frequency}HZ", refreshRateService.GetCurrentDisplayFrequency());
+                            }
+
+                            break;
+                        }
+                    default:
+                        break;
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(0, ex, "An error occured while starting the service");
+
+                if (LogToFile)
+                {
+                    File.AppendAllText("Log.log", "An error occured while starting the service");
+                }
             }
         }
 
@@ -48,15 +88,15 @@ namespace AutoRefreshRateChangerWorker
                         {
                             if (planLevel == PowerPlanLevel.Low)
                             {
-                                refreshRateService.SwitchTo60();
+                                refreshRateService.SwitchToLowFrequency();
 
-                                _logger.LogWarning("Display mode switched to {frequency}HZ", refreshRateService.DisplayMode.Frequency);
+                                _logger.LogWarning("Display mode switched to {frequency}HZ", refreshRateService.GetCurrentDisplayFrequency());
                             }
                             else if (planLevel == PowerPlanLevel.High)
                             {
-                                refreshRateService.SwitchTo144();
+                                refreshRateService.SwitchToHighFrequency();
 
-                                _logger.LogWarning("Display mode switched to {frequency}HZ", refreshRateService.DisplayMode.Frequency);
+                                _logger.LogWarning("Display mode switched to {frequency}HZ", refreshRateService.GetCurrentDisplayFrequency());
                             }
 
                             powerManagementService.ActivePlan = planLevel;
@@ -66,26 +106,16 @@ namespace AutoRefreshRateChangerWorker
                 catch (Exception ex)
                 {
                     _logger.LogError(0, ex, "Operation failed!");
+
+                    if (LogToFile)
+                    {
+                        File.AppendAllText("Log.log", ex.Message);
+                    }
                 }
 
                 _logger.LogInformation("Refresh rate worker running at: {time}", DateTimeOffset.Now);
 
                 await Task.Delay(2000, stoppingToken);
-            }
-        }
-
-        public override async Task StopAsync(CancellationToken stoppingToken)
-        {
-            await base.StopAsync(stoppingToken);
-
-            try
-            {
-                //Here we detach from the "SystemEvents.PowerModeChanged" event.
-
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(1, ex, "An error occured while stopping the service");
             }
         }
     }
